@@ -1,3 +1,7 @@
+if(process.env.NODE_ENV != "production"){
+    require("dotenv").config();
+}
+
 const express = require("express");
 const app = express();
 const mongoose = require("mongoose");
@@ -7,10 +11,15 @@ const ejsMate = require("ejs-mate");
 const ExpressError=require("./utils/ExpressError.js");
 const session = require("express-session");
 const flash = require("connect-flash");
+const passport = require("passport");
+const LocalStrategy = require("passport-local");
+const User = require("./models/user.js");
+
 
 // routes
-const listings = require("./routes/listing.js");
-const reviews = require("./routes/review.js");
+const listingRouter = require("./routes/listing.js");
+const reviewRouter = require("./routes/review.js");
+const userRouter = require("./routes/user.js");
 
 app.set("views",path.join(__dirname,"views"));
 app.set("view engine","ejs");
@@ -46,21 +55,45 @@ const sessionOptions = {
 app.use(session(sessionOptions));
 app.use(flash());
 
+app.use(passport.initialize());
+app.use(passport.session());
+passport.use(new LocalStrategy(User.authenticate()));
+
+passport.serializeUser(User.serializeUser());
+passport.deserializeUser(User.deserializeUser()); 
+
 //Home page
 app.get("/",(req,res)=>{
     res.send("Page is working");
 });
 
+
+//locals function we can access this any where
 app.use((req,res,next)=>{
     res.locals.success = req.flash("success");
     res.locals.error = req.flash("error");
+    res.locals.currUser=req.user; //we can access this variables any where
     next();
 })
+
+// app.get("/demouser", async (req,res) => {
+//     const fakeUser = new User({
+//         email : "student@gmail.com",
+//         username : "Santhu",
+//     });
+
+//     let registeredUser = await User.register(fakeUser, "santhu@01");  //par1 : username and other details, par2 : password.
+//     res.send(registeredUser);
+// })
+
 //listings -routes
-app.use("/listings", listings);
+app.use("/listings", listingRouter);
 
 //reviwes -routes
-app.use("/listings/:id/reviews", reviews);
+app.use("/listings/:id/reviews", reviewRouter);
+
+//users -routes
+app.use("/",userRouter);
 
 
 app.use((req,res,next)=>{
