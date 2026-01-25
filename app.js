@@ -10,6 +10,7 @@ const methodOverride = require("method-override");
 const ejsMate = require("ejs-mate");
 const ExpressError=require("./utils/ExpressError.js");
 const session = require("express-session");
+const MongoStore = require("connect-mongo");
 const flash = require("connect-flash");
 const passport = require("passport");
 const LocalStrategy = require("passport-local");
@@ -28,6 +29,8 @@ app.use(methodOverride("_method"));
 app.engine("ejs",ejsMate);
 app.use(express.static(path.join(__dirname,"public")));
 
+const DB_URL = process.env.MONGO_URL;
+
 main()
 .then((res)=>{
     console.log("Server is connected");
@@ -37,22 +40,35 @@ main()
 });
 
 async function main(){
-    await mongoose.connect("mongodb://127.0.0.1:27017/CozyBee");
+    await mongoose.connect(DB_URL);
 }
 
-const sessionOptions = {
-    secret : "mysupersecretsession",
-    resave : false,
-    saveUninitialized : true,
-    cookie:{
-        expires : Date.now() + 7 * 24 * 60 * 60 * 1000,
-        maxAge : 7 * 24 * 60 * 60 * 1000,
-        httpOnly : true,
-    },
-};
 
+const SESSION_SECRET = process.env.SESSION_SECRET || "devfallbacksecret";
 
-app.use(session(sessionOptions));
+const store = MongoStore.create({
+    mongoUrl: DB_URL,
+    touchAfter: 24 * 3600, // update session once per day
+});
+
+store.on("error", (err) => {
+    console.log(" Error in Mongo Session Store:", err);
+});
+
+app.use(
+    session({
+        store,
+        name: "session",
+        secret: SESSION_SECRET,
+        resave: false,
+        saveUninitialized: false, // 🔥 MUST be false
+        cookie: {
+            httpOnly: true,
+            maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+        },
+    })
+);
+
 app.use(flash());
 
 app.use(passport.initialize());
@@ -63,9 +79,9 @@ passport.serializeUser(User.serializeUser());
 passport.deserializeUser(User.deserializeUser()); 
 
 //Home page
-app.get("/",(req,res)=>{
-    res.send("Page is working");
-});
+// app.get("/",(req,res)=>{
+//     res.send("Page is working");
+// });
 
 
 //locals function we can access this any where
@@ -100,11 +116,15 @@ app.use((req,res,next)=>{
     next(new ExpressError(404, "Page not found!"));
 });
 
-app.use((err,req,res,next)=>{
-   let {statusCode =500, message="Something went Wrong!"}= err;
-   res.status(statusCode).render("error.ejs",{message});
-   //res.status(statusCode).send(message);
+app.use((err, req, res, next) => {
+    console.log(" HEADERS SENT:", res.headersSent);
+    console.log(err.stack);
+    if (res.headersSent) return next(err);
+    res.status(err.statusCode || 500).render("error.ejs", {
+        message: err.message || "Something went wrong",
+    });
 });
+
 
 app.listen(8080,()=>{
     console.log("Server is running 8080");

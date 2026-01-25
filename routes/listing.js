@@ -25,7 +25,7 @@ route.post("/",isLoggedIn,upload.single('listing[image]'),validateListing,wrapAs
 route.get("/:id/edit",isLoggedIn,isOwner,wrapAsync(listingController.renderEditForm));
 
 // update
-route.put("/:id",isLoggedIn,isOwner,validateListing,wrapAsync(listingController.updateListing));
+route.put("/:id",isLoggedIn,isOwner,validateListing,upload.single('listing[image]'),wrapAsync(listingController.updateListing));
 
 //delete route
 route.delete("/:id",isLoggedIn,isOwner,wrapAsync(listingController.deleteListing));  
