@@ -10,8 +10,8 @@ body{
     flex: 1;
 }
 /* Navbar */
-.navbar{
-    height: 5rem;
+.navbar {
+    height: 5rem;       
     background-color: white !important;
 }
 
@@ -120,4 +120,52 @@ body{
 #map{
     height: 400px;
     width: 80vh;
+}
+
+/* ===============================
+   MOBILE NAVBAR FIX
+   =============================== */
+@media (max-width: 768px) {
+
+  /* Navbar collapse panel */
+  .navbar-collapse {
+    background: #ffffff;
+    padding: 1rem 1.25rem;
+    margin-top: 0.75rem;
+    border-radius: 18px;
+    box-shadow: 0 10px 35px rgba(0,0,0,0.15);
+  }
+
+  /* Stack items vertically */
+  .navbar-collapse > * {
+    width: 100%;
+  }
+
+  /* Search form */
+  form[role="search"] {
+    flex-direction: column;
+    align-items: stretch;
+    margin: 0.75rem 0;
+  }
+
+  .search-input {
+    width: 100%;
+    min-width: unset;
+    margin-bottom: 0.5rem;
+  }
+
+  .search-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Tax toggle spacing */
+  .tax-toggle {
+    margin: 0.75rem 0;
+  }
+
+  /* Nav link spacing */
+  .navbar-nav .nav-link {
+    padding: 0.6rem 0;
+  }
 }

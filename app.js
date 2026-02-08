@@ -61,7 +61,7 @@ app.use(
         name: "session",
         secret: SESSION_SECRET,
         resave: false,
-        saveUninitialized: false, // 🔥 MUST be false
+        saveUninitialized: false, 
         cookie: {
             httpOnly: true,
             maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
@@ -79,10 +79,9 @@ passport.serializeUser(User.serializeUser());
 passport.deserializeUser(User.deserializeUser()); 
 
 //Home page
-// app.get("/",(req,res)=>{
-//     res.send("Page is working");
-// });
-
+app.get("/",(req,res)=>{
+    res.redirect("/listings");
+});
 
 //locals function we can access this any where
 app.use((req,res,next)=>{
@@ -101,6 +100,7 @@ app.use((req,res,next)=>{
 //     let registeredUser = await User.register(fakeUser, "santhu@01");  //par1 : username and other details, par2 : password.
 //     res.send(registeredUser);
 // })
+
 
 //listings -routes
 app.use("/listings", listingRouter);

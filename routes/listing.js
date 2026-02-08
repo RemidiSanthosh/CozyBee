@@ -28,6 +28,10 @@ route.get("/:id/edit",isLoggedIn,isOwner,wrapAsync(listingController.renderEditF
 route.put("/:id",isLoggedIn,isOwner,validateListing,upload.single('listing[image]'),wrapAsync(listingController.updateListing));
 
 //delete route
-route.delete("/:id",isLoggedIn,isOwner,wrapAsync(listingController.deleteListing));  
+route.delete("/:id",isLoggedIn,isOwner,wrapAsync(listingController.deleteListing)); 
+
+//search not found page
+route.get("/search", listingController.searchListings);
+
 
 module.exports = route;

@@ -1,0 +1,27 @@
+<style>
+.search-msg{
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    background-color: rgb(178, 178, 175);
+}
+</style>
+
+<div class="row row-cols-lg-3 row-cols-md-2 row-cols-sm-1 mt-4 search-msg">
+
+  <div class="container text-center mt-5">
+
+  <h3><b>No listings found</b></h3>
+
+  <p>
+   <b> No results found for "<%= query %>".</b>
+  </p>
+
+  <a href="/listings" class="btn btn-dark mt-3">
+    Explore all listings
+  </a>
+</div>
+
+</div>

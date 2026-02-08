@@ -5,10 +5,33 @@ const geocodingClient = mbxGeocoding({
   accessToken: process.env.MAP_TOKEN
 });
 
-module.exports.index = async (req,res)=>{
-    const allListings = await Listing.find({});
-    res.render("listings/index.ejs",{allListings});
+module.exports.index = async (req, res) => {
+  const { q, category } = req.query;
+  let filter = {};
+
+  if (q?.trim()) {
+    const regex = new RegExp(q.trim(), "i");
+    filter.$or = [
+      { title: regex },
+      { location: regex },
+      { country: regex },
+    ];
+  }
+
+  if (category) {
+    filter.category = category;
+  }
+
+  const allListings = await Listing.find(filter).populate("owner");
+
+  if ((q || category) && allListings.length === 0) {
+    return res.render("listings/notFound.ejs", { query: q });
+  }
+
+  res.render("listings/index.ejs", { allListings, q });
 };
+
+
 
 module.exports.renderNewForm = (req,res)=>{
     res.render("listings/newListing.ejs");
@@ -25,26 +48,31 @@ module.exports.showListing = async (req,res)=>{
 };
 
 module.exports.createListing = async (req, res) => {
-  
-    const response = await geocodingClient
-                    .forwardGeocode({
-                    query: req.body.listing.location,
-                    limit: 1,
-                })
+  const response = await geocodingClient
+    .forwardGeocode({
+      query: req.body.listing.location,
+      limit: 1,
+    })
     .send();
 
+  if (!response.body.features.length) {
+    req.flash("error", "Invalid location");
+    return res.redirect("/listings/new");
+  }
 
-    let url = req.file.path;
-    let filename = req.file.filename;
-    const newListing = new Listing(req.body.listing);
-    newListing.owner = req.user._id;
-    newListing.image = { url, filename };
+  const newListing = new Listing(req.body.listing);
 
-    newListing.geometry = response.body.features[0].geometry;
+  newListing.owner = req.user._id;
+  newListing.image = {
+    url: req.file.path,
+    filename: req.file.filename,
+  };
 
-    await newListing.save();
-    req.flash("success", "New Listing is Created");
-    res.redirect("/listings");
+  newListing.geometry = response.body.features[0].geometry;
+
+  await newListing.save();
+  req.flash("success", "New Listing is Created");
+  res.redirect("/listings");
 };
 
 
@@ -83,4 +111,19 @@ module.exports.deleteListing = async (req,res)=>{
     console.log(deletedListing);
     req.flash("success", "Listing Deleted!");
     res.redirect ("/listings");
+};
+
+module.exports.searchListings = async (req, res) => {
+  const { q } = req.query;
+
+  const listings = await Listing.find({
+    title: { $regex: q, $options: "i" }
+  });
+
+  // If nothing found → show notFound page
+  if (listings.length === 0) {
+    return res.render("listings/notFound", { query: q });
+  }
+
+  res.render("listings/index", { allListings: listings });
 };
